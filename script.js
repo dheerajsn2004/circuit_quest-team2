@@ -9,19 +9,19 @@ let correctAnswersCount = JSON.parse(localStorage.getItem("correctAnswersCount")
 let answeredQuestions = JSON.parse(localStorage.getItem("answeredQuestions")) || Array(questions.length).fill(false);
 let userAnswers = JSON.parse(localStorage.getItem("userAnswers")) || Array(questions.length).fill("");
 let quizCompleted = JSON.parse(localStorage.getItem("quizCompleted")) || false;
-let roomLocationStored = localStorage.getItem("roomLocation") || ""; 
-let quizTimedOut = JSON.parse(localStorage.getItem("quizTimedOut")) || false; // Track if quiz time expired
+let roomLocationStored = localStorage.getItem("roomLocation") || "";
+let quizTimedOut = JSON.parse(localStorage.getItem("quizTimedOut")) || false;
 
 let timeLeft = JSON.parse(localStorage.getItem("timeLeft"));
-if (timeLeft === null) timeLeft = 180; // Set to 3 minutes only if not stored before
+if (timeLeft === null) timeLeft = 180;
 
 const timerElement = document.getElementById("timer");
 const roomLocation = document.getElementById("roomLocation");
+let timerInterval;
 
-// Timer Logic
 function startTimer() {
     if (quizCompleted) {
-        timerElement.style.display = "none"; // Hide timer if quiz is already completed
+        timerElement.innerText = `Time Left: ${formatTime(timeLeft)}`;
         return;
     }
 
@@ -30,33 +30,36 @@ function startTimer() {
         return;
     }
 
-    const timerInterval = setInterval(() => {
+    timerInterval = setInterval(() => {
         if (correctAnswersCount === questions.length) {
             clearInterval(timerInterval);
-            timerElement.style.display = "none"; // Hide timer
+            timerElement.style.display = "none";
         } else if (timeLeft <= 0) {
             clearInterval(timerInterval);
             endQuizDueToTimeout();
         } else {
             timeLeft--;
             localStorage.setItem("timeLeft", JSON.stringify(timeLeft));
-            let minutes = Math.floor(timeLeft / 60);
-            let seconds = timeLeft % 60;
-            timerElement.innerText = `Time Left: ${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+            timerElement.innerText = `Time Left: ${formatTime(timeLeft)}`;
         }
     }, 1000);
+
+    localStorage.setItem("timerRunning", JSON.stringify(true));
+}
+
+function formatTime(seconds) {
+    let minutes = Math.floor(seconds / 60);
+    let secs = seconds % 60;
+    return `${minutes}:${secs < 10 ? "0" : ""}${secs}`;
 }
 
 function endQuizDueToTimeout() {
-    localStorage.setItem("quizTimedOut", JSON.stringify(true)); // Mark quiz as timed out
+    localStorage.setItem("quizTimedOut", JSON.stringify(true));
     timerElement.innerText = "Time's Up!";
     timerElement.style.backgroundColor = "red";
-
-    // Disable all input fields and buttons
     document.querySelectorAll("input, button").forEach((el) => el.disabled = true);
 }
 
-// Display Questions
 const questionContainer = document.getElementById("questionContainer");
 questions.forEach((q, index) => {
     questionContainer.innerHTML += `
@@ -72,9 +75,8 @@ questions.forEach((q, index) => {
     `;
 });
 
-// Check Answer Function
 function checkAnswer(index) {
-    if (quizTimedOut) return; // Prevent checking answers if quiz timed out
+    if (quizTimedOut) return;
 
     let answerInput = document.getElementById(`answer${index}`);
     let feedbackMessage = document.getElementById(`feedback${index}`);
@@ -82,9 +84,9 @@ function checkAnswer(index) {
     let button = document.querySelector(`.question:nth-child(${index + 1}) button`);
 
     let userAnswer = answerInput.value.trim().toLowerCase();
-    let correctAnswers = questions[index].a.toLowerCase().split(" || "); // Split possible answers
+    let correctAnswers = questions[index].a.toLowerCase().split(" || ");
 
-    if (!userAnswer) return; 
+    if (!userAnswer) return;
 
     button.disabled = true;
     button.innerText = "Checking...";
@@ -121,34 +123,38 @@ function checkAnswer(index) {
     }, 1500);
 }
 
-// Show Completion Message
 function showCompletionMessage() {
+    clearInterval(timerInterval);
+    localStorage.setItem("timerRunning", JSON.stringify(false));
+
     let roomNumbers = questions.map((q, index) => 
         `<p><b>${q.room}</b> → ${userAnswers[index]}</p>` 
     ).join("");
 
-    roomLocationStored = `<h3>🎉 Congratulations! You have successfully completed the quiz. 🎉</h3>${roomNumbers}`;
+    roomLocationStored = `<h3>🎉 Congratulations! You have successfully completed the quiz. 🎉</h3>
+                          <p><b>Time Left: ${formatTime(timeLeft)}</b></p>
+                          ${roomNumbers}`;
+    
     localStorage.setItem("roomLocation", roomLocationStored);
+    localStorage.setItem("quizCompleted", JSON.stringify(true));
 
     roomLocation.innerHTML = roomLocationStored;
     roomLocation.style.display = "block";
 
-    timerElement.style.display = "none";
-    quizCompleted = true;
-    localStorage.setItem("quizCompleted", JSON.stringify(quizCompleted));
+    timerElement.innerText = `Time Left: ${formatTime(timeLeft)}`;
+    timerElement.style.color = "green";
 
     setTimeout(() => {
         document.getElementById("roomLocation").scrollIntoView({ behavior: "smooth", block: "start" });
     }, 1000);
 }
 
-// Restore State on Refresh
 if (quizCompleted) {
     roomLocation.innerHTML = roomLocationStored;
     roomLocation.style.display = "block";
-    timerElement.style.display = "none";
+    timerElement.innerText = `Time Left: ${formatTime(timeLeft)}`;
 } else if (quizTimedOut) {
-    endQuizDueToTimeout(); // Ensure timeout state persists
+    endQuizDueToTimeout();
 } else {
-    startTimer(); // Start the timer only if quiz is not completed/timed out
+    startTimer();
 }
