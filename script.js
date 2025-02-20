@@ -1,6 +1,6 @@
 const questions = [
     { q: "A mere flicker of control at my heart dictates then fate of a greater force. I do not create, but I command, shaping the strength of what flows through me. Who am I?", a: "BJT || Transistor", room: "AEC Lab" },
-    { q: "I devour electrons and return them as brilliance, yet a wrong approach leaves me in darkness. What am I?", a: "LED", room: "Room 303" },
+    { q: "I devour electrons and return them as brilliance, yet a wrong approach leaves me in darkness. What am I?", a: "LED || Light Emitting Diode", room: "Room 303" },
     { q: "I do not move, yet I shape the journey of all who pass through me. Their force weakens in my presence, yet without me, destruction looms. What am I?", a: "Resistor", room: "Room 405" }
 ];
 
